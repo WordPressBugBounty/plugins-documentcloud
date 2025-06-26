@@ -6,7 +6,7 @@ The DocumentCloud WordPress plugin lets you embed [DocumentCloud](https://www.do
 
 ## Installation
 
-1. Upload the contents of the plugin to `wp-content/plugins/documentcloud`
+1. Upload the contents of the `src/documentcloud` plugin to `wp-content/plugins/documentcloud`
 2. Activate the plugin through the "Plugins" menu
 3. In your posts, embed documents, pages, or notes using the DocumentCloud button or the `[documentcloud]` shortcode
 4. Optional: Set a default width/height for all DocumentCloud embeds (which can be overridden on a per-embed basis with the `height/width` attributes) at Settings > DocumentCloud. (This default width will only be used if you set `responsive="false"` on an embed.)
@@ -47,6 +47,7 @@ To embed a note, use any note-specific URL. Notes ignore `width/height` and alwa
 
 Here's the full list of embed options you can pass via shortcode attributes; some are specific to the type of resource you're embedding.
 
+
 ### All resources:
 
 - `url` (**required**, string): Full URL of the DocumentCloud resource.
@@ -68,6 +69,24 @@ Here's the full list of embed options you can pass via shortcode attributes; som
 - `zoom` (boolean): Hide or show zoom slider.
 - `format` (string): Indicate to the theme that this is a wide asset by setting this to `wide`. Defaults `normal`.
 
+Or as a Gutenberg Block :
+
+    DocumentCloud
+Icon - ![DocumentCloud Block Icon](assets/DocumentCloud-Block-Icon.svg)
+
+Here's the list of settings that can be used for the block:
+- `WIDTH` (number): Sets the width of the document (optional)
+- `HEIGHT` (number): Sets the height of the document (optional)
+- `STYLE` (string): Adds additional style to the embedded document  (optional)
+
+The following options can only be used for Documents:
+- `Show Title` (toggle): Determines whether to show the title of the embedded document
+- `Show FullScreen Button` (toggle): Determines whether to show a full screen icon on the document
+- `Only Show Organization` (toggle): Determines whether to only show the organization name that published the document.
+- `Show PDF Download Link` (toggle): Determines whether to show the download as pdf icon for documents.
+
+**Note** - The default width and height from the Settings does not work for the Gutenberg Block.
+
 You can read more about publishing and embedding DocumentCloud resources on https://www.documentcloud.org/help/publishing.
 
 ## How the oEmbed endpoint is discovered
@@ -85,7 +104,81 @@ If you find yourself absolutely needing to expire the cache, though, you have tw
 1. Delete the appropriate `_oembed_*` rows from your `postmeta` table.
 2. Modify the shortcode attributes for the embed, since this is recognized as a new embed by WordPress.
 
+## Development
+
+Plugin files are located in `src/documentcloud`
+
+Docker is used to spin up a development and testing WordPress environment.
+
+Unit tests are setup using PHPUnit and Jest, please refer to [Testing Setup ](./TESTING.md) for the setup steps
+
+### Install
+
+```sh
+# Start services
+docker compose up
+
+# Fix permissions
+docker compose exec wordpress chown -R www-data:www-data /var/www/html
+```
+
+1. Go to [`localhost:8000`](http://localhost:8000)
+2. Create an account. Save the username and password, then log in.
+3. Go to the Plugins section, then activate the "DocumentCloud" plugin.
+
+### Test
+
+Tests can be run in a separate container called `testing`.
+
+To test the PHP plugin, use `phpunit` command inside the testing container's `bash` shell after setting it up:
+
+```sh
+# 1. Open a shell into the testing service
+docker compose exec -it testing bash
+
+# 2. Install the WordPress Test Suite anytime you rebuild the container
+./bin/install-wp-tests.sh test root password db latest
+
+# 3. Now the container is ready to run PHPUnit Tests
+phpunit
+```
+
+To test the JS Gutenberg block, use `npm test` command inside the testing container's `bash` shell after setting it up:
+
+```sh
+# 1. Open a shell into the testing service
+docker compose exec -it testing bash
+
+# 2. Navigate to the blocks directory
+cd src/documentcloud/blocks
+
+# 3. Install Node modules
+npm i
+
+# 4. Now the container is ready to run Jest tests
+npm test
+```
+
+Find more advanced instructions in `TESTING.md`
+
+### Package for release
+
+To create a new release:
+
+1. Update the version number in `src/documentcloud/documentcloud.php` and `src/documentcloud/readme.txt`
+2. Update changelog for new version in `README.md` and `src/documentcloud/readme.txt`
+3. Run `package-plugin.sh` to generate ZIP file for distribution
+
 ## Changelog
+
+### 0.6.0
+* Add Gutenberg block for embedding DocumentCloud documents resonating a functionality similar to the shortcode.
+* Update the shortcode to support the following attributes
+  * `onlyshoworg` - When set to 1 it only displays the organization name
+  * `pdf` - When set to 1 it shows a pdf download icon
+  * `showfullscreen` - When set to 1 it displays a full screen icon.
+  * `title` - When set to 1 it displays the title of the document.
+* Allow setting the query parameter attributes when directly embedding the url in Embed block.
 
 ### 0.5.1
 
@@ -143,3 +236,4 @@ If you find yourself absolutely needing to expire the cache, though, you have tw
 ## License and History
 
 The DocumentCloud WordPress plugin is [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html). Initial development of this plugin by Chris Amico (@eyeseast) supported by [NPR](http://www.npr.org) as part of the [StateImpact](http://stateimpact.npr.org) project. Development continued by Justin Reese (@reefdog) at [DocumentCloud](https://www.documentcloud.org/).
+
